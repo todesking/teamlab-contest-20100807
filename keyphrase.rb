@@ -1,3 +1,4 @@
+$KCODE='u'
 require 'rubygems'
 require 'pit'
 require 'digest/sha1'
