@@ -5,4 +5,5 @@ DATA_DIR=$BASE_DIR/data
 for file in $DATA_DIR/* ; do
 	echo "Source: $file"
 	ruby keyphrase.rb $file
+	echo
 done
