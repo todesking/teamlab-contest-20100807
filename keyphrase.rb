@@ -2,6 +2,7 @@ require 'rubygems'
 require 'pit'
 require 'digest/sha1'
 require File.join(File.dirname(__FILE__),'yahoo_keyphrase.rb')
+require File.join(File.dirname(__FILE__),'mcvalue.rb')
 
 CACHE_DIR=File.join(File.dirname(__FILE__),'cache')
 
@@ -21,6 +22,9 @@ extractors={
     open(cache_path,'w'){|f| Marshal.dump(result,f) }
     return result
   },
+  :mc_value => lambda {|text|
+    return MCValue.new.extract(text)
+  }
 }
 
 extractors.each{|k,v|
