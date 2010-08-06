@@ -1,5 +1,5 @@
 require File.join(File.dirname(__FILE__),'rmecab.rb')
-require 'set'
+require 'jcode'
 
 class MCValue
   def initialize
@@ -7,11 +7,12 @@ class MCValue
   end
 
   def extract(text)
-    # TODO: dummy
-    word_stream=@mecab.
-      parse(text).
+    word_stream=stream_filter(@mecab.parse(text_filter(text))).
       map{|x|
-        if x.pos[0] == '名詞'
+        case
+        when %w(名詞 未知語).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
+          x
+        when x.pos[1]=='アルファベット'
           x
         else
           nil
@@ -30,14 +31,40 @@ class MCValue
     }
     collocations.add_all make_possible_collocations(buf)
     puts "possible collocations: #{collocations.unique_collocations.size}"
-    collocations.unique_collocations.sort_by{|c|
+    sorted=collocations.unique_collocations.sort_by{|c|
       -mcvalue_of(collocations,c)
-    }.map{|c|c.surface}[0,20]
+    }.map{|c|c.surface}
+    return merge_simwords(sorted)[0,40]
+  end
+
+  def merge_simwords(sorted)
+    result=[]
+    sorted.each{|s|
+      result.push(s) unless result.index{|r|r.index(s)}
+    }
+    return result
   end
 
   def mcvalue_of collocations,c
-    summary=collocations.summary_of(c)
-    c.length*(summary[:count] - summary[:longer]/[summary[:longer_unique],1].max)
+    if c.surface =~ /^.$|^[０-９]*$/
+      return 0.0
+    else
+      weight=1.0
+      reparsed=@mecab.parse(c.surface)
+      if reparsed.length==1
+        word=reparsed.first
+        case
+        when word.pos[1]=='固有名詞' || word.pos[0]=='未知語'
+          weight=3.0
+        when %w(接尾).include?(word.pos[1])
+          weight=0.0
+        end
+      end
+      return 0.0 if weight==0.0
+      summary=collocations.summary_of(c)
+      return 0.0 if summary[:count] < 2
+      return weight*c.length*(summary[:count] - summary[:longer].to_f/[summary[:longer_unique],1].max)
+    end
   end
 
   def make_possible_collocations words
@@ -46,6 +73,57 @@ class MCValue
       (0..(words.length-size)).each{|i|
         result.push Collocation.new(words[i,size])
       }
+    }
+    return result
+  end
+
+  HAN2ZEN=%w|
+  (（
+  )）
+  [［
+  ]］
+  !！
+  @＠
+  $＄
+  :：
+  -ー
+  +＋
+  ･・
+  /／
+  ,，
+  .．
+  %％
+  |
+  def text_filter(text)
+    HAN2ZEN.each{|x|
+      xx=x.split(//)
+      text=text.gsub(xx[0],xx[1])
+    }
+    return text.tr('0-9a-zA-Z','０-９ａ-ｚＡ-Ｚ')
+  end
+
+  def number? s
+    return !s.nil? && s.pos[0]=='名詞' && s.pos[1]=='数'
+  end
+
+  def stream_filter(stream)
+    prev=nil
+    result=[]
+    join_to_next=false
+    stream.each{|s|
+      case
+      when join_to_next
+        join_to_next=false
+        result.last.surface+='・'+s.surface
+      when number?(s) && number?(prev)
+        result.pop
+        result.push prev.merge(s)
+      when s.surface=='・'
+        join_to_next=true
+      else
+        result.push s
+      end
+      prev=result.last
     }
     return result
   end

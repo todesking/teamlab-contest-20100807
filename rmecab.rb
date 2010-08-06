@@ -16,15 +16,16 @@ class RMeCab
   end
 
   class Term
-    attr_reader :surface          # 表層形
-    attr_reader :pos              # 品詞
-    attr_reader :cost             # 生起コスト
-    attr_reader :conjugation_form # 活用形
-    attr_reader :conjugation_type # 活用型
-    attr_reader :root             # 原形
-    attr_reader :reading          # 読み
-    attr_reader :pronounce        # 発音
+    attr_accessor :surface          # 表層形
+    attr_accessor :pos              # 品詞
+    attr_accessor :cost             # 生起コスト
+    attr_accessor :conjugation_form # 活用形
+    attr_accessor :conjugation_type # 活用型
+    attr_accessor :root             # 原形
+    attr_accessor :reading          # 読み
+    attr_accessor :pronounce        # 発音
     def initialize args
+      return if args.nil?
       @surface=args[:surface]
       @cost=args[:cost]
       features=args[:feature].split(',')
@@ -37,6 +38,18 @@ class RMeCab
     end
     def to_s
       "#{@surface}(#{@pos})"
+    end
+
+    # てきとうにつなげる
+    def merge(other,new_pos=@pos)
+      t=Term.new(nil)
+      t.surface=surface+other.surface
+      t.pos=new_pos
+      t.cost=cost
+      t.root=root+other.root
+      t.reading=reading+other.reading
+      t.pronounce=pronounce+other.pronounce
+      return t
     end
   end
 
