@@ -1,21 +1,30 @@
 require 'rubygems'
 require 'pit'
+require 'digest/sha1'
 require File.join(File.dirname(__FILE__),'yahoo_keyphrase.rb')
+
+CACHE_DIR=File.join(File.dirname(__FILE__),'cache')
 
 content=ARGF.read
 
 extractors={
   :yahoo_keyphrase => lambda {|text|
-    YahooKeyphraseAPI.new(Pit.get('yahoo')['appid']).
+    hash=Digest::SHA1.hexdigest(text)
+    cache_path=File.join(CACHE_DIR,'yahoo',hash)
+    if File.exists? cache_path
+      return open(cache_path){|f|Marshal.load(f)}
+    end
+    result=YahooKeyphraseAPI.new(Pit.get('yahoo')['appid']).
       extract(text).
       sort_by{|x|-x[:score]}.
       map{|x| x[:keyphrase] }
+    open(cache_path,'w'){|f| Marshal.dump(result,f) }
+    return result
   },
 }
 
 extractors.each{|k,v|
   keywords=v.call(content)
-  puts "engine: #{k}"
-  puts "keywords: "
-  puts "    "+keywords.join(", ")
+  puts "============= #{k} =============="
+  puts keywords.join(", ")
 }
