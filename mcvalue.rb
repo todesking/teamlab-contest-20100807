@@ -27,7 +27,7 @@ class MCValue
       score-=c.surface.jlength*0.1
       score
     }.map{|c|c.surface}
-    return merge_simwords(sorted)[0,40]
+    return merge_simwords(sorted)[0,60]
   end
 
   def pos_filter(words)
