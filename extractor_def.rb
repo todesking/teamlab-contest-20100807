@@ -14,7 +14,7 @@ EXTRACTORS={
     if File.exists? cache_path
       return open(cache_path){|f|Marshal.load(f)}
     end
-    result=YahooKeyphraseAPI.new(Pit.get('yahoo')['appid']).
+    result=YahooKeyphraseAPI.new(Pit.get('yahoo',:require=>{'appid'=>'appid'})['appid']).
       extract(title+text).
       sort_by{|x|-x[:score]}.
       map{|x| x[:keyphrase] }
