@@ -7,7 +7,8 @@ class MCValue
   end
 
   def extract(title,text)
-    word_stream=stream_filter(@mecab.parse(text_filter(text))).
+    normalized_title=text_filter(title)
+    word_stream=stream_filter(@mecab.parse(text_filter(title+text))).
       map{|x|
         case
         when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
@@ -33,7 +34,10 @@ class MCValue
     collocations.add_all make_possible_collocations(buf)
     puts "possible collocations: #{collocations.unique_collocations.size}"
     sorted=collocations.unique_collocations.sort_by{|c|
-      -mcvalue_of(collocations,c)
+      score=-mcvalue_of(collocations,c)
+      score*=2 if normalized_title.index(c.surface)
+      score-=c.surface.jlength*0.1
+      score
     }.map{|c|c.surface}
     return merge_simwords(sorted)[0,40]
   end
@@ -62,8 +66,10 @@ class MCValue
           weight=0.0
         when word.pos[0]=='未知語' && word.surface.jlength<3
           weight=0.0
-        when word.pos[1]=='固有名詞' || word.pos[0]=='未知語'
+        when word.pos[1]=='固有名詞'
           weight=3.0
+        when word.pos[0]=='未知語'
+          weight=5.0
         when %w(接尾).include?(word.pos[1])
           weight=0.0
         end
@@ -106,7 +112,8 @@ class MCValue
   def text_filter(text)
     HAN2ZEN.each{|x|
       xx=x.split(//)
-      text=text.gsub(xx[0],xx[1])
+      text=text.gsub(xx[0],'　')
+      text=text.gsub(xx[1],'　')
     }
     return text.tr('0-9a-zA-Z','０-９ａ-ｚＡ-Ｚ')
   end
