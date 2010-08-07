@@ -8,7 +8,7 @@ class MCValue
 
   def extract(title,text)
     normalized_title=text_filter(title)
-    word_stream=stream_filter(@mecab.parse(text_filter(title+text))).
+    word_stream=stream_filter(@mecab.parse(text_filter(title+'　'+text))).
       map{|x|
         case
         when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
