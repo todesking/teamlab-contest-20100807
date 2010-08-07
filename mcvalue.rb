@@ -101,6 +101,8 @@ class MCValue
   )）
   [［
   ]］
+  {｛
+  }｝
   !！
   @＠
   $＄
@@ -113,6 +115,8 @@ class MCValue
   .．
   %％
   "”
+  ;；
+  #＃
   |
   def text_filter(text)
     HAN2ZEN.each{|x|
