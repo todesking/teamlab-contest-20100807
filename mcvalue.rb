@@ -10,7 +10,7 @@ class MCValue
     word_stream=stream_filter(@mecab.parse(text_filter(text))).
       map{|x|
         case
-        when %w(名詞 未知語).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
+        when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
           x
         when x.pos[1]=='アルファベット'
           x
@@ -41,18 +41,18 @@ class MCValue
   def merge_simwords(sorted)
     result=[]
     sorted.each{|s|
-      result.push(s) unless result.index{|r|r.index(s)}
+      result.push(s) unless result.index{|r|r.index(s)||s.index(r)}
     }
     return result
   end
 
   def mcvalue_of collocations,c
-    if c.surface =~ /^(.|[０-９]+|[Ａ-Ｚａ-ｚ０-９]{0,2})$/
+    if c.surface =~ /^(.|[０-９]{1,5}|[Ａ-Ｚａ-ｚ０-９]{0,2})$/
       return 0.0
     else
       weight=1.0
       if c.surface =~ /・/
-        weight=1+2*c.surface.jcount('・')
+        weight=1+c.surface.jcount('・')
       end
       reparsed=@mecab.parse(c.surface)
       if reparsed.length==1
