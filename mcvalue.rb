@@ -118,17 +118,12 @@ class MCValue
   def stream_filter(stream)
     prev=nil
     result=[]
-    join_to_next=false
     stream.each{|s|
       case
-      when join_to_next
-        join_to_next=false
-        result.last.surface+='・'+s.surface
       when number?(s) && number?(prev)
         result.pop
         result.push prev.merge(s)
       when s.surface=='・'
-        join_to_next=true
       else
         result.push s
       end
