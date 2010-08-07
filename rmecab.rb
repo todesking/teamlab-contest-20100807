@@ -51,6 +51,9 @@ class RMeCab
       t.pronounce=pronounce+other.pronounce
       return t
     end
+    def hash
+      surface.hash
+    end
   end
 
   class POS

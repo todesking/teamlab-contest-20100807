@@ -19,8 +19,7 @@ class MCValue
         else
           nil
         end
-      }.
-      map{|x| x.nil? ? nil : x.surface}
+      }
     buf=[]
     collocations=Collocations.new
     word_stream.each{|w|
@@ -48,15 +47,18 @@ class MCValue
   end
 
   def mcvalue_of collocations,c
-    if c.surface =~ /^.$|^[０-９]*$/
+    if c.surface =~ /^(.|[０-９]+|[Ａ-Ｚａ-ｚ０-９]{0,2})$/
       return 0.0
     else
       weight=1.0
+      if c.surface =~ /・/
+        weight=1+2*c.surface.jcount('・')
+      end
       reparsed=@mecab.parse(c.surface)
       if reparsed.length==1
         word=reparsed.first
         case
-        when word.surface =~ /[Ａ-Ｚａ-ｚ０-９]{0,2}/
+        when word.surface =~ /^[Ａ-Ｚａ-ｚ０-９]{0,2}$/
           weight=0.0
         when word.pos[0]=='未知語' && word.surface.jlength<3
           weight=0.0
@@ -152,7 +154,7 @@ class MCValue
       while i<=(sl-ol)
         j=0
         while j<ol
-          break if words[i+j]!=other.words[j]
+          break if words[i+j].surface!=other.words[j].surface
           j+=1
         end
         return true if j==ol
@@ -162,7 +164,14 @@ class MCValue
     end
 
     def eql?(other)
-      self.words.eql? other.words
+      return false if length!=other.length
+      i=0
+      l=length
+      while i<l
+        return false if words[i].surface != other.words[i].surface
+        i+=1
+      end
+      return true
     end
 
     def hash
@@ -170,7 +179,11 @@ class MCValue
     end
 
     def surface
-      @words.join('')
+      @words.map(&:surface).join('')
+    end
+
+    def avg_cost
+      @words.map(&:cost).inject(0.0){|a,x|a+x}/length
     end
   end
 

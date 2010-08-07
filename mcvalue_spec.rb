@@ -1,7 +1,9 @@
 require File.join(File.dirname(__FILE__),'mcvalue.rb')
 
+MockTerm=Struct.new(:surface)
+
 def colloc(space_sepalated_words)
-  MCValue::Collocation.new(space_sepalated_words.split(' '))
+  MCValue::Collocation.new(space_sepalated_words.split(' ').map{|x|MockTerm.new(x)})
 end
 
 describe MCValue::Collocation do
