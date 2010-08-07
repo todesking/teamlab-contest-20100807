@@ -141,6 +141,7 @@ class MCValue
     def initialize(words)
       @words=words
       @length=words.length
+      @surface=@words.map(&:surface).join('')
     end
 
     attr_reader :words
@@ -150,6 +151,7 @@ class MCValue
       sl=self.length
       ol=other.length
       return false if sl<ol
+      return false if !self.surface.index(other.surface)
       i=0
       while i<=(sl-ol)
         j=0
@@ -179,7 +181,7 @@ class MCValue
     end
 
     def surface
-      @words.map(&:surface).join('')
+      @surface
     end
 
     def avg_cost
@@ -212,8 +214,9 @@ class MCValue
       end
       longer=0
       longer_unique=0
+      cl=colloc.length
       @cache.each{|c,count|
-        if colloc.length < c.length && c.contains?(colloc)
+        if cl < c.length && c.contains?(colloc)
           longer+=count
           longer_unique+=1
         end
