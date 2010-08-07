@@ -11,6 +11,8 @@ class MCValue
     word_stream=stream_filter(@mecab.parse(text_filter(title+'　'+text))).
       map{|x|
         case
+        when x.nil?
+          nil
         when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
           x
         when x.pos[1]=='アルファベット'
@@ -122,6 +124,10 @@ class MCValue
     return !s.nil? && s.pos[0]=='名詞' && s.pos[1]=='数'
   end
 
+  def alpha_only? s
+    return s.surface =~ /[Ａ-Ｚａ-ｚ]/
+  end
+
   def stream_filter(stream)
     prev=nil
     result=[]
@@ -130,6 +136,10 @@ class MCValue
       when number?(s) && number?(prev)
         result.pop
         result.push prev.merge(s)
+      when alpha_only?(s)
+        result.push nil
+        result.push s
+        result.push nil
       when s.surface=='・'
       else
         result.push s
