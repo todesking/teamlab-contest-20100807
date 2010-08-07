@@ -14,6 +14,8 @@ class MCValue
           x
         when x.pos[1]=='アルファベット'
           x
+        when x.pos[1]=='名詞接続'
+          x
         else
           nil
         end
@@ -54,6 +56,10 @@ class MCValue
       if reparsed.length==1
         word=reparsed.first
         case
+        when word.surface =~ /[Ａ-Ｚａ-ｚ０-９]{0,2}/
+          weight=0.0
+        when word.pos[0]=='未知語' && word.surface.jlength<3
+          weight=0.0
         when word.pos[1]=='固有名詞' || word.pos[0]=='未知語'
           weight=3.0
         when %w(接尾).include?(word.pos[1])
@@ -86,13 +92,14 @@ class MCValue
   @＠
   $＄
   :：
-  -ー
+  -‐
   +＋
   ･・
   /／
   ,，
   .．
   %％
+  "”
   |
   def text_filter(text)
     HAN2ZEN.each{|x|
