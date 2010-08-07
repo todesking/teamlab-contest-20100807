@@ -190,6 +190,7 @@ class MCValue
   class Collocations
     def initialize
       @collocs={}
+      @cache=nil
     end
 
     def add_all collocations
@@ -202,13 +203,16 @@ class MCValue
       else
         @collocs[collocation]=1
       end
-
+      @cache=nil
     end
 
     def summary_of colloc
+      unless @cache
+        @cache=@collocs.to_a
+      end
       longer=0
       longer_unique=0
-      @collocs.each{|c,count|
+      @cache.each{|c,count|
         if colloc.length < c.length && c.contains?(colloc)
           longer+=count
           longer_unique+=1
