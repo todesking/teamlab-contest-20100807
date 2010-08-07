@@ -8,21 +8,7 @@ class MCValue
 
   def extract(title,text)
     normalized_title=text_filter(title)
-    word_stream=stream_filter(@mecab.parse(text_filter(title+'　'+text))).
-      map{|x|
-        case
-        when x.nil?
-          nil
-        when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
-          x
-        when x.pos[1]=='アルファベット'
-          x
-        when x.pos[1]=='名詞接続'
-          x
-        else
-          nil
-        end
-      }
+    word_stream=pos_filter(stream_filter(@mecab.parse(text_filter(title+'　'+title+'　'+title+'　'+text))))
     buf=[]
     collocations=Collocations.new
     word_stream.each{|w|
@@ -42,6 +28,23 @@ class MCValue
       score
     }.map{|c|c.surface}
     return merge_simwords(sorted)[0,40]
+  end
+
+  def pos_filter(words)
+      words.map{|x|
+        case
+        when x.nil?
+          nil
+        when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
+          x
+        when x.pos[1]=='アルファベット'
+          x
+        when x.pos[1]=='名詞接続'
+          x
+        else
+          nil
+        end
+      }
   end
 
   def merge_simwords(sorted)
