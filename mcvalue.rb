@@ -6,7 +6,7 @@ class MCValue
     @mecab=RMeCab.new("-x 未知語")
   end
 
-  def extract(text)
+  def extract(title,text)
     word_stream=stream_filter(@mecab.parse(text_filter(text))).
       map{|x|
         case

@@ -6,5 +6,5 @@ raw_content=ARGF.read
 
 body,title=ExtractContent.analyse(raw_content)
 
-puts title
+puts title.gsub(/[\r\n]/,'')
 puts body

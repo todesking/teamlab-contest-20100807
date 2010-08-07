@@ -8,20 +8,20 @@ require File.join(File.dirname(__FILE__),'mcvalue.rb')
 CACHE_DIR=File.join(File.dirname(__FILE__),'cache')
 
 EXTRACTORS={
-  :yahoo_keyphrase => lambda {|text|
-    hash=Digest::SHA1.hexdigest(text)
+  :yahoo_keyphrase => lambda {|title,text|
+    hash=Digest::SHA1.hexdigest(title+text)
     cache_path=File.join(CACHE_DIR,'yahoo',hash)
     if File.exists? cache_path
       return open(cache_path){|f|Marshal.load(f)}
     end
     result=YahooKeyphraseAPI.new(Pit.get('yahoo')['appid']).
-      extract(text).
+      extract(title+text).
       sort_by{|x|-x[:score]}.
       map{|x| x[:keyphrase] }
     open(cache_path,'w'){|f| Marshal.dump(result,f) }
     return result
   },
-  :mc_value => lambda {|text|
-    return MCValue.new.extract(text)
+  :mc_value => lambda {|title,text|
+    return MCValue.new.extract(title,text)
   }
 }
