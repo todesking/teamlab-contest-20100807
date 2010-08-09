@@ -6,20 +6,9 @@ class MCValue
     @mecab=RMeCab.new("-x 未知語")
   end
 
-  def extract(text)
-    word_stream=stream_filter(@mecab.parse(text_filter(text))).
-      map{|x|
-        case
-        when %w(名詞 未知語).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
-          x
-        when x.pos[1]=='アルファベット'
-          x
-        when x.pos[1]=='名詞接続'
-          x
-        else
-          nil
-        end
-      }
+  def extract(title,text)
+    normalized_title=text_filter(title)
+    word_stream=pos_filter(stream_filter(@mecab.parse(text_filter(title+'　'+title+'　'+title+'　'+text))))
     buf=[]
     collocations=Collocations.new
     word_stream.each{|w|
@@ -33,26 +22,46 @@ class MCValue
     collocations.add_all make_possible_collocations(buf)
     puts "possible collocations: #{collocations.unique_collocations.size}"
     sorted=collocations.unique_collocations.sort_by{|c|
-      -mcvalue_of(collocations,c)
+      score=-mcvalue_of(collocations,c)
+      score*=2 if normalized_title.index(c.surface)
+      score-=c.surface.jlength*0.1
+      score
     }.map{|c|c.surface}
-    return merge_simwords(sorted)[0,40]
+    return merge_simwords(sorted)[0,60]
+  end
+
+  def pos_filter(words)
+      words.map{|x|
+        case
+        when x.nil?
+          nil
+        when %w(名詞 未知語 動詞).include?(x.pos[0]) && !%w(非自立 代名詞).include?(x.pos[1])
+          x
+        when x.pos[1]=='アルファベット'
+          x
+        when x.pos[1]=='名詞接続'
+          x
+        else
+          nil
+        end
+      }
   end
 
   def merge_simwords(sorted)
     result=[]
     sorted.each{|s|
-      result.push(s) unless result.index{|r|r.index(s)}
+      result.push(s) unless result.index{|r|r.index(s)||s.index(r)}
     }
     return result
   end
 
   def mcvalue_of collocations,c
-    if c.surface =~ /^(.|[０-９]+|[Ａ-Ｚａ-ｚ０-９]{0,2})$/
+    if c.surface =~ /^(.|[０-９]{1,5}|[Ａ-Ｚａ-ｚ０-９]{0,2})$/
       return 0.0
     else
       weight=1.0
       if c.surface =~ /・/
-        weight=1+2*c.surface.jcount('・')
+        weight=1+c.surface.jcount('・')
       end
       reparsed=@mecab.parse(c.surface)
       if reparsed.length==1
@@ -62,8 +71,10 @@ class MCValue
           weight=0.0
         when word.pos[0]=='未知語' && word.surface.jlength<3
           weight=0.0
-        when word.pos[1]=='固有名詞' || word.pos[0]=='未知語'
+        when word.pos[1]=='固有名詞'
           weight=3.0
+        when word.pos[0]=='未知語'
+          weight=5.0
         when %w(接尾).include?(word.pos[1])
           weight=0.0
         end
@@ -90,6 +101,8 @@ class MCValue
   )）
   [［
   ]］
+  {｛
+  }｝
   !！
   @＠
   $＄
@@ -102,11 +115,14 @@ class MCValue
   .．
   %％
   "”
+  ;；
+  #＃
   |
   def text_filter(text)
     HAN2ZEN.each{|x|
       xx=x.split(//)
-      text=text.gsub(xx[0],xx[1])
+      text=text.gsub(xx[0],'　')
+      text=text.gsub(xx[1],'　')
     }
     return text.tr('0-9a-zA-Z','０-９ａ-ｚＡ-Ｚ')
   end
@@ -115,20 +131,23 @@ class MCValue
     return !s.nil? && s.pos[0]=='名詞' && s.pos[1]=='数'
   end
 
+  def alpha_only? s
+    return s.surface =~ /[Ａ-Ｚａ-ｚ]/
+  end
+
   def stream_filter(stream)
     prev=nil
     result=[]
-    join_to_next=false
     stream.each{|s|
       case
-      when join_to_next
-        join_to_next=false
-        result.last.surface+='・'+s.surface
       when number?(s) && number?(prev)
         result.pop
         result.push prev.merge(s)
+      when alpha_only?(s)
+        result.push nil
+        result.push s
+        result.push nil
       when s.surface=='・'
-        join_to_next=true
       else
         result.push s
       end

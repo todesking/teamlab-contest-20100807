@@ -8,7 +8,7 @@ class YahooKeyphraseAPI
     @appid=appid
   end
   def extract(text)
-    resp=post(API_URI,{:appid=>@appid,:sentence=>text})
+    resp=request(API_URI,{:appid=>@appid,:sentence=>text})
     doc=Nokogiri(resp)
     result=[]
     (doc/'Result').each{|r|
@@ -23,8 +23,12 @@ class YahooKeyphraseAPI
 
   private
 
-  def post(uri,params)
+  def request(uri,params)
     res=Net::HTTP.post_form(uri,params)
+    if res.code != '200'
+      puts res
+      raise 'error!!!'
+    end
     return res.body
   end
 
